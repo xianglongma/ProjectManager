@@ -2,7 +2,10 @@ package server
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/xianglongma/ProjectManager/handler/article"
+	"github.com/xianglongma/ProjectManager/handler/comment"
 	"github.com/xianglongma/ProjectManager/handler/file"
+	"github.com/xianglongma/ProjectManager/handler/history"
 	"github.com/xianglongma/ProjectManager/handler/navbar"
 	"github.com/xianglongma/ProjectManager/handler/project"
 	"github.com/xianglongma/ProjectManager/handler/user"
@@ -26,6 +29,9 @@ func NewGinServer(addr string) Server {
 		navAPI:     navbar.NewNavAPI(),
 		fileAPI:    file.NewFileAPI(),
 		projectAPI: project.NewAPI(),
+		historyAPI: history.NewAPI(),
+		commentAPI: comment.NewAPI(),
+		articleAPI: article.NewAPI(),
 	}
 }
 
@@ -36,6 +42,9 @@ type GinServer struct {
 	navAPI     navbar.NavAPI
 	fileAPI    file.API
 	projectAPI project.API
+	historyAPI history.API
+	commentAPI comment.API
+	articleAPI article.API
 }
 
 func (g *GinServer) SetRouter() Server {
@@ -58,9 +67,11 @@ func (g *GinServer) SetRouter() Server {
 	authGroup.Use(middleware.AuthMiddleWare())
 	{
 		authGroup.POST("logout", g.userAPI.UserLogout)
+		authGroup.POST("user", g.userAPI.UserUpdateInfo)
 		authGroup.GET("userinfo", g.userAPI.CurrentUserInfo) // /api/userinfo 获取用户信息
 		authGroup.GET("navbar", g.navAPI.GetMenuList)
 		authGroup.GET("user/list", g.userAPI.UserList)
+		authGroup.GET("user/order/list", g.userAPI.UserOrderList)
 	}
 	fileGroup := authGroup.Group("/file")
 	{
@@ -70,6 +81,22 @@ func (g *GinServer) SetRouter() Server {
 	{
 		projectGroup.POST("", g.projectAPI.Create)
 		projectGroup.GET("/:id", g.projectAPI.Retrieve)
+		projectGroup.GET("/list", g.projectAPI.List)
+	}
+	historyGroup := authGroup.Group("/history")
+	{
+		historyGroup.POST("", g.historyAPI.Create)
+		historyGroup.GET("list", g.historyAPI.ListByID)
+	}
+	commentGroup := authGroup.Group("/comment")
+	{
+		commentGroup.POST("", g.commentAPI.Create)
+		commentGroup.GET("/list", g.commentAPI.ListByQueryParam)
+	}
+	articleGroup := authGroup.Group("/article")
+	{
+		articleGroup.POST("", g.articleAPI.Create)
+		articleGroup.GET("/list", g.articleAPI.List)
 	}
 	return g
 }

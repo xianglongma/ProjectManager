@@ -1,10 +1,12 @@
 package project
 
 import (
+	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/xianglongma/ProjectManager/dao"
 	"github.com/xianglongma/ProjectManager/dao/db"
 	"github.com/xianglongma/ProjectManager/pkg/resp"
+	"gorm.io/gorm"
 	"strconv"
 	"strings"
 )
@@ -34,12 +36,14 @@ func (A APIImpl) Create(ctx *gin.Context) {
 		resp.SendError(ctx, resp.InvalidParam)
 		return
 	}
-	projects, err := A.projectDao.Query("title = ?", request.Title)
+	projects, err := A.projectDao.QueryOne("title = ?", request.Title)
 	if err != nil {
-		resp.SendError(ctx, err)
-		return
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			resp.SendError(ctx, err)
+			return
+		}
 	}
-	if len(projects) != 0 && projects[0].ID != 0 {
+	if projects.ID != 0 {
 		resp.SendError(ctx, resp.InvalidProject)
 		return
 	}
@@ -79,13 +83,26 @@ func (A APIImpl) Create(ctx *gin.Context) {
 		resp.SendError(ctx, err)
 		return
 	}
+	err = A.userDao.Update("score", user.Score+2, "ID = ?", user.ID)
+	if err != nil {
+		resp.SendError(ctx, err)
+		return
+	}
 	resp.SendData(ctx, gin.H{
 		"id": project.ID,
 	})
 }
 
 func (A APIImpl) List(ctx *gin.Context) {
-	panic("")
+	orderType := ctx.Query("type")
+	owner := ctx.Query("owner")
+	projectNameLike := "%" + ctx.Query("project_name_like") + "%"
+	projects, err := A.projectDao.Query(&dao.Project{NickName: owner}, 20, 0, orderType, "title like ?", projectNameLike)
+	if err != nil {
+		resp.SendError(ctx, err)
+		return
+	}
+	resp.SendData(ctx, projects)
 }
 
 func (A APIImpl) Query(ctx *gin.Context) {

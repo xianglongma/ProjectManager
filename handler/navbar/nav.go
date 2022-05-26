@@ -66,6 +66,18 @@ func (n NavAPIImpl) GetMenuList(ctx *gin.Context) {
 			Component: "RouteView",
 		},
 		{
+
+			Name:     "ArticleDetail",
+			ParentID: 0,
+			ID:       20005,
+			Meta: MenuMeta{
+				Icon:  "global",
+				Title: "文章",
+				Show:  false,
+			},
+			Component: "ArticleDetail",
+		},
+		{
 			Name:     "account",
 			ParentID: 0,
 			ID:       10028,
@@ -99,6 +111,17 @@ func (n NavAPIImpl) GetMenuList(ctx *gin.Context) {
 			},
 			Redirect:  "/account/settings/basic",
 			Component: "AccountSettings",
+		},
+		{
+			Name:     "BasicSettings",
+			Path:     "/account/settings/basic",
+			ParentID: 10030,
+			ID:       10031,
+			Meta: MenuMeta{
+				Title: "基本设置",
+				Show:  false,
+			},
+			Component: "BasicSetting",
 		},
 		{
 

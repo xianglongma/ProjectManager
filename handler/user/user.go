@@ -12,6 +12,8 @@ type UserAPI interface {
 	UserLogout(ctx *gin.Context)
 	CurrentUserInfo(ctx *gin.Context)
 	UserList(ctx *gin.Context)
+	UserOrderList(ctx *gin.Context)
+	UserUpdateInfo(ctx *gin.Context)
 }
 
 type UserApiImpl struct {

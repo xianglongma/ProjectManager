@@ -36,9 +36,10 @@ var ProjectDao ProjectDaoIF
 type ProjectDaoIF interface {
 	AutoMigrate()
 	Create(project *Project) error
-	Update(project *Project) error
+	Update(field string, value interface{}, where string, args ...interface{}) error
+	Updates(project *Project, where string, args ...interface{}) error
 	Delete(project *Project) error
-	Query(where string, args ...interface{}) ([]Project, error)
+	Query(project *Project, limit int, offset int, orderType string, where string, args ...interface{}) ([]Project, error)
 	QueryOne(where string, args ...interface{}) (Project, error)
 }
 
@@ -62,18 +63,39 @@ func (p projectDao) Create(project *Project) error {
 	return d.Error
 }
 
-func (p projectDao) Update(project *Project) error {
-	panic("project update")
+func (p projectDao) Update(field string, value interface{}, where string, args ...interface{}) error {
+	result := p.client.DB().Model(&Project{}).Where(where, args).Update(field, value)
+	return result.Error
+}
+
+func (p projectDao) Updates(project *Project, where string, args ...interface{}) error {
+	result := p.client.DB().Model(&Project{}).Where(where, args).Updates(project)
+	return result.Error
 }
 
 func (p projectDao) Delete(project *Project) error {
 	panic("project update")
 }
 
-func (p projectDao) Query(where string, args ...interface{}) ([]Project, error) {
+func (p projectDao) Query(project *Project, limit int, offset int, orderType string, where string, args ...interface{}) ([]Project, error) {
 	var projects []Project
-	result := p.client.DB().Find(&projects, where, args)
-	return projects, result.Error
+	db := p.client.DB()
+	switch orderType {
+	case "time":
+		db = db.Order("created_at desc")
+	case "score":
+		db = db.Order("scores desc")
+	case "star":
+		db = db.Order("stars desc")
+	default:
+		db = db.Order("created_at desc")
+	}
+	db = db.Limit(limit).Offset(offset).Where(project)
+	if where != "" {
+		db = db.Where(where, args)
+	}
+	db.Find(&projects)
+	return projects, db.Error
 }
 
 func (p projectDao) QueryOne(where string, args ...interface{}) (Project, error) {

@@ -2,6 +2,7 @@ package navbar
 
 type MenuList struct {
 	Name      string   `json:"name"`
+	Path      string   `json:"path,omitempty"`
 	ParentID  int      `json:"parentId"`
 	ID        int      `json:"id"`
 	Meta      MenuMeta `json:"meta"`

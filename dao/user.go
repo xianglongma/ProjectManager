@@ -7,6 +7,7 @@ import (
 
 type User struct {
 	gorm.Model
+	Avatar      string `json:"avatar"`
 	Email       string `json:"email"`
 	Mobile      string `json:"mobile"`
 	Password    string `json:"password"`
@@ -27,10 +28,12 @@ var UserDao UserDaoIF
 type UserDaoIF interface {
 	AutoMigrate()
 	Create(user *User) error
-	Update(user *User) error
+	Update(field string, value interface{}, where string, args ...interface{}) error
 	Delete(user *User) error
 	Query(where string, args ...interface{}) ([]User, error)
+	QueryOrder(user *User, limit int, offset int, orderType string, where string, args ...interface{}) ([]User, error)
 	QueryOne(where string, args ...interface{}) (User, error)
+	Updates(project *User, where string, args ...interface{}) error
 }
 
 type userDao struct {
@@ -53,9 +56,10 @@ func (u userDao) Create(user *User) error {
 	return d.Error
 }
 
-func (u userDao) Update(user *User) error {
+func (u userDao) Update(field string, value interface{}, where string, args ...interface{}) error {
 	//u.client.DB().
-	panic("imp")
+	result := u.client.DB().Model(&User{}).Where(where, args).Update(field, value)
+	return result.Error
 }
 
 func (u userDao) Delete(user *User) error {
@@ -72,4 +76,27 @@ func (u userDao) QueryOne(where string, args ...interface{}) (User, error) {
 	var user User
 	result := u.client.DB().First(&user, where, args)
 	return user, result.Error
+}
+func (u userDao) QueryOrder(project *User, limit int, offset int, orderType string, where string, args ...interface{}) ([]User, error) {
+	var projects []User
+	db := u.client.DB()
+	switch orderType {
+	case "time":
+		db = db.Order("created_at desc")
+	case "score":
+		db = db.Order("score desc")
+	default:
+		db = db.Order("created_at desc")
+	}
+	db = db.Limit(limit).Offset(offset).Where(project)
+	if where != "" {
+		db = db.Where(where, args)
+	}
+	db.Find(&projects)
+	return projects, db.Error
+}
+
+func (u userDao) Updates(project *User, where string, args ...interface{}) error {
+	result := u.client.DB().Model(&User{}).Where(where, args).Updates(project)
+	return result.Error
 }
